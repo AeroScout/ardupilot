@@ -100,6 +100,7 @@ public:
         uint32_t tune_next              : 3;    // tuning switched to next parameter
         uint32_t tune_save              : 1;    // tuning saved parameters
         uint32_t tune_error             : 1;    // tuning controller error
+	uint32_t debug_mode_change	: 1;	// 1 when in debug mode
     };
 
     // The notify flags and values are static to allow direct class access

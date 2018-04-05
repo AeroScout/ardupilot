@@ -111,6 +111,7 @@ bool ToneAlarm_PX4::init()
     return true;
 }
 
+
 // play_tune - play one of the pre-defined tunes
 void ToneAlarm_PX4::play_tone(const uint8_t tone_index)
 {
@@ -246,6 +247,11 @@ void ToneAlarm_PX4::update()
     // failsafe initiated mode change
     if(AP_Notify::events.failsafe_mode_change) {
         play_tone(AP_NOTIFY_PX4_TONE_LOUD_ATTENTION_NEEDED);
+    }
+
+    // notify user when in debug mode
+    if(AP_Notify::events.debug_mode_change) {
+	play_tone(AP_NOTIFY_PX4_TONE_QUIET_NEU_FEEDBACK);
     }
 
     // notify the user when arming fails
