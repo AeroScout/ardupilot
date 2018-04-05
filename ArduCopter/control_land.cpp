@@ -165,18 +165,18 @@ int32_t Copter::land_get_alt_above_ground(void)
 
 void Copter::land_run_vertical_control(bool pause_descent)
 {
-    bool navigating = pos_control->is_active_xy();
+    /* bool navigating = pos_control->is_active_xy();
 
 #if PRECISION_LANDING == ENABLED
     bool doing_precision_landing = !ap.land_repo_active && precland.target_acquired() && navigating;
 #else
     bool doing_precision_landing = false;
-#endif
+#endif 
 
     // compute desired velocity
     const float precland_acceptable_error = 15.0f;
     const float precland_min_descent_speed = 10.0f;
-    int32_t alt_above_ground = land_get_alt_above_ground();
+    int32_t alt_above_ground = land_get_alt_above_ground(); */
 
     float cmb_rate = 0;
     if (!pause_descent) {
@@ -191,16 +191,17 @@ void Copter::land_run_vertical_control(bool pause_descent)
         max_land_descent_velocity = MIN(max_land_descent_velocity, -abs(g.land_speed));
 
         // Compute a vertical velocity demand such that the vehicle approaches LAND_START_ALT. Without the below constraint, this would cause the vehicle to hover at LAND_START_ALT.
-        cmb_rate = AC_AttitudeControl::sqrt_controller(LAND_START_ALT-alt_above_ground, g.p_alt_hold.kP(), pos_control->get_accel_z());
+        //cmb_rate = AC_AttitudeControl::sqrt_controller(LAND_START_ALT-alt_above_ground, g.p_alt_hold.kP(), pos_control->get_accel_z());
+	cmb_rate = -abs(g.land_speed);
 
         // Constrain the demanded vertical velocity so that it is between the configured maximum descent speed and the configured minimum descent speed.
         cmb_rate = constrain_float(cmb_rate, max_land_descent_velocity, -abs(g.land_speed));
 
-        if (doing_precision_landing && rangefinder_alt_ok() && rangefinder_state.alt_cm > 35.0f && rangefinder_state.alt_cm < 200.0f) {
+        /* if (doing_precision_landing && rangefinder_alt_ok() && rangefinder_state.alt_cm > 35.0f && rangefinder_state.alt_cm < 200.0f) {
             float max_descent_speed = abs(g.land_speed)/2.0f;
             float land_slowdown = MAX(0.0f, pos_control->get_horizontal_error()*(max_descent_speed/precland_acceptable_error));
             cmb_rate = MIN(-precland_min_descent_speed, -max_descent_speed+land_slowdown);
-        }
+        } */
     }
 
     // update altitude target and call position controller
