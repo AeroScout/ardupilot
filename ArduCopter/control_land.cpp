@@ -174,7 +174,7 @@ void Copter::land_run_vertical_control(bool pause_descent)
 #endif 
 
     // compute desired velocity
-    const float precland_acceptable_error = 150.0f;
+    const float precland_acceptable_error = 10.0f;
     /* const float precland_min_descent_speed = 10.0f;
     int32_t alt_above_ground = land_get_alt_above_ground(); */
 
