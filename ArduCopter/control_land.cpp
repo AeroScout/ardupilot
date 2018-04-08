@@ -165,7 +165,7 @@ int32_t Copter::land_get_alt_above_ground(void)
 
 void Copter::land_run_vertical_control(bool pause_descent)
 {
-    /* bool navigating = pos_control->is_active_xy();
+    bool navigating = pos_control->is_active_xy();
 
 #if PRECISION_LANDING == ENABLED
     bool doing_precision_landing = !ap.land_repo_active && precland.target_acquired() && navigating;
@@ -174,8 +174,8 @@ void Copter::land_run_vertical_control(bool pause_descent)
 #endif 
 
     // compute desired velocity
-    const float precland_acceptable_error = 15.0f;
-    const float precland_min_descent_speed = 10.0f;
+    const float precland_acceptable_error = 150.0f;
+    /* const float precland_min_descent_speed = 10.0f;
     int32_t alt_above_ground = land_get_alt_above_ground(); */
 
     float cmb_rate = 0;
@@ -196,6 +196,11 @@ void Copter::land_run_vertical_control(bool pause_descent)
 
         // Constrain the demanded vertical velocity so that it is between the configured maximum descent speed and the configured minimum descent speed.
         cmb_rate = constrain_float(cmb_rate, max_land_descent_velocity, -abs(g.land_speed));
+
+	// Play a tune when horizontal error is higher than the acceptable error
+	if (doing_precision_landing && (pos_control->get_horizontal_error() > precland_acceptable_error)) {
+	    AP_Notify::events.debug_mode_change = 1;
+	}
 
         /* if (doing_precision_landing && rangefinder_alt_ok() && rangefinder_state.alt_cm > 35.0f && rangefinder_state.alt_cm < 200.0f) {
             float max_descent_speed = abs(g.land_speed)/2.0f;
