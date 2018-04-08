@@ -251,7 +251,7 @@ void ToneAlarm_PX4::update()
 
     // notify user when in debug mode
     if(AP_Notify::events.debug_mode_change) {
-	play_tone(AP_NOTIFY_PX4_TONE_QUIET_NEU_FEEDBACK);
+	play_tone(AP_NOTIFY_PX4_TONE_LOUD_1);
     }
 
     // notify the user when arming fails
