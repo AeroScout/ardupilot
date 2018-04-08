@@ -15,8 +15,6 @@ bool Copter::stabilize_init(bool ignore_checks)
     // set target altitude to zero for reporting
     pos_control->set_alt_target(0);
 
-    AP_Notify::events.debug_mode_change = 1;
-
     return true;
 }
 
