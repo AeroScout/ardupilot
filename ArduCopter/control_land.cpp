@@ -29,7 +29,7 @@ bool Copter::land_init(bool ignore_checks)
     
     land_start_time = millis();
 
-    land_pause = false;
+    land_pause = true;
 
     // reset flag indicating if pilot has applied roll or pitch inputs during landing
     ap.land_repo_active = false;
