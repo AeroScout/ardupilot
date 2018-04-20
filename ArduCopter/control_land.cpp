@@ -2,7 +2,7 @@
 
 static bool land_with_gps;
 
-static uint32_t land_start_time;
+uint32_t land_start_time;
 bool land_pause;
 
 // land_init - initialise land controller
@@ -197,10 +197,11 @@ void Copter::land_run_vertical_control(bool pause_descent)
         // Constrain the demanded vertical velocity so that it is between the configured maximum descent speed and the configured minimum descent speed.
         cmb_rate = constrain_float(cmb_rate, max_land_descent_velocity, -abs(g.land_speed));
 
-	    // Play a tune when horizontal error is higher than the acceptable error
-	    if (doing_precision_landing && (pos_control->get_horizontal_error() > precland_acceptable_error)) {
+	    // Play a tune and pause drone when horizontal error is higher than the acceptable error
+	    if (doing_precision_landing && (pos_control->get_horizontal_error() > precland_acceptable_error && !land_pause)) {
 	        AP_Notify::events.debug_mode_change = 1;
             land_pause = true;
+            land_start_time = millis();
 	    }
 
         /* if (doing_precision_landing && rangefinder_alt_ok() && rangefinder_state.alt_cm > 35.0f && rangefinder_state.alt_cm < 200.0f && (pos_control->get_horizontal_error() > precland_acceptable_error)) {
