@@ -143,6 +143,11 @@ void Copter::land_nogps_run()
         land_pause = false;
     }
 
+    // play a tune when pausing
+    if(land_pause){
+        AP_Notify::events.debug_mode_change = 1;
+    }
+
     land_run_vertical_control(land_pause);
 }
 
@@ -199,7 +204,6 @@ void Copter::land_run_vertical_control(bool pause_descent)
 
 	    // Play a tune and pause drone when horizontal error is higher than the acceptable error
 	    if (doing_precision_landing && (pos_control->get_horizontal_error() > precland_acceptable_error && !land_pause)) {
-	        AP_Notify::events.debug_mode_change = 1;
             land_pause = true;
             land_start_time = millis();
 	    }
