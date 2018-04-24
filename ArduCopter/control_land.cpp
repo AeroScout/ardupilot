@@ -143,11 +143,6 @@ void Copter::land_nogps_run()
         land_pause = false;
     }
 
-    // play a tune when pausing
-    if(land_pause){
-        AP_Notify::events.debug_mode_change = 1;
-    }
-
     land_run_vertical_control(land_pause);
 }
 
@@ -180,8 +175,8 @@ void Copter::land_run_vertical_control(bool pause_descent)
 
     // compute desired velocity
     const float precland_acceptable_error = 20.0f;
-    /* const float precland_min_descent_speed = 10.0f;
-    int32_t alt_above_ground = land_get_alt_above_ground(); */
+    // const float precland_min_descent_speed = 10.0f;
+    int32_t alt_above_ground = land_get_alt_above_ground(); 
 
     float cmb_rate = 0;
     if (!pause_descent) {
@@ -200,19 +195,28 @@ void Copter::land_run_vertical_control(bool pause_descent)
 	    cmb_rate = -abs(g.land_speed);
 
         // Constrain the demanded vertical velocity so that it is between the configured maximum descent speed and the configured minimum descent speed.
-        cmb_rate = constrain_float(cmb_rate, max_land_descent_velocity, -abs(g.land_speed));
+        // cmb_rate = constrain_float(cmb_rate, max_land_descent_velocity, -abs(g.land_speed));
 
 	    // Play a tune and pause drone when horizontal error is higher than the acceptable error
-	    if (doing_precision_landing && (pos_control->get_horizontal_error() > precland_acceptable_error && !land_pause)) {
+	    /* if (doing_precision_landing && (pos_control->get_horizontal_error() > precland_acceptable_error && !land_pause)) {
             land_pause = true;
             land_start_time = millis();
-	    }
+	    } */
 
-        /* if (doing_precision_landing && rangefinder_alt_ok() && rangefinder_state.alt_cm > 35.0f && rangefinder_state.alt_cm < 200.0f && (pos_control->get_horizontal_error() > precland_acceptable_error)) {
-            float max_descent_speed = abs(g.land_speed)/2.0f;
-            float land_slowdown = MAX(0.0f, pos_control->get_horizontal_error()*(max_descent_speed/precland_acceptable_error));
-            cmb_rate = MIN(-precland_min_descent_speed, -max_descent_speed+land_slowdown);
-        } */
+        if(doing_precision_landing && rangefinder_alt_ok()){
+            if (alt_above_ground > 60.0f && alt_above_ground < 200.0f && (pos_control->get_horizontal_error() > precland_acceptable_error)) {
+                // pause drone if horizontal error is higher than the acceptable error
+                cmb_rate = 0.0f;
+
+                // play a tune when pausing
+                AP_Notify::events.debug_mode_change = 1;
+    
+            } else if (alt_above_ground < 30.0f){
+                // Final slow down
+                cmb_rate = -abs(g.land_speed/2.0f);
+            }
+        } 
+        
     }
 
     // update altitude target and call position controller
