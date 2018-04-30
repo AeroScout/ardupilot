@@ -4,6 +4,7 @@ static bool land_with_gps;
 
 uint32_t land_start_time;
 bool land_pause;
+uint16_t land_stage;
 
 // land_init - initialise land controller
 bool Copter::land_init(bool ignore_checks)
@@ -27,9 +28,14 @@ bool Copter::land_init(bool ignore_checks)
         pos_control->set_desired_velocity_z(inertial_nav.get_velocity_z());
     }
     
+    // initializae land start time
     land_start_time = millis();
 
+    // pause before attempting to land
     land_pause = true;
+
+    // initialize land state to INIT state
+    land_stage = STAGE_INIT;
 
     // reset flag indicating if pilot has applied roll or pitch inputs during landing
     ap.land_repo_active = false;
@@ -174,49 +180,65 @@ void Copter::land_run_vertical_control(bool pause_descent)
 #endif 
 
     // compute desired velocity
-    const float precland_acceptable_error = 20.0f;
+    // float precland_acceptable_error = 20.0f;
     // const float precland_min_descent_speed = 10.0f;
-    int32_t alt_above_ground = land_get_alt_above_ground(); 
+    const int32_t alt_above_ground = land_get_alt_above_ground();
+    const float horizontal_error = pos_control->get_horizontal_error();
 
     float cmb_rate = 0;
-    if (!pause_descent) {
-        float max_land_descent_velocity;
-        if (g.land_speed_high > 0) {
-            max_land_descent_velocity = -g.land_speed_high;
-        } else {
-            max_land_descent_velocity = pos_control->get_speed_down();
-        }
-
-        // Don't speed up for landing.
-        max_land_descent_velocity = MIN(max_land_descent_velocity, -abs(g.land_speed));
-
-        // Compute a vertical velocity demand such that the vehicle approaches LAND_START_ALT. Without the below constraint, this would cause the vehicle to hover at LAND_START_ALT.
-        //cmb_rate = AC_AttitudeControl::sqrt_controller(LAND_START_ALT-alt_above_ground, g.p_alt_hold.kP(), pos_control->get_accel_z());
+    if (!pause_descent && doing_precision_landing && rangefinder_alt_ok()) {
+    	// Set a constant land speed
 	    cmb_rate = -abs(g.land_speed);
 
-        // Constrain the demanded vertical velocity so that it is between the configured maximum descent speed and the configured minimum descent speed.
-        // cmb_rate = constrain_float(cmb_rate, max_land_descent_velocity, -abs(g.land_speed));
+	    switch(land_stage){
+	    	case STAGE_INIT:
+	    		// when drone altitude is less than the minimum altitude, enter stage 1
+	    		if(alt_above_ground < STAGE_INIT_MIN_ALT){
+	    			land_stage = STAGE_1;
+	    			AP_Notify::events.debug_mode_change = 1;
+	    		}
 
-	    // Play a tune and pause drone when horizontal error is higher than the acceptable error
-	    /* if (doing_precision_landing && (pos_control->get_horizontal_error() > precland_acceptable_error && !land_pause)) {
-            land_pause = true;
-            land_start_time = millis();
-	    } */
+	    		break;
+	    	case STAGE_1:
+	    		// when horizontal error is larger than the acceptable error, perform precision loiter
+	    		if(horizontal_error > STAGE_1_MAX_H_ERROR){
+	    			cmb_rate = 0;
+	    		} else if(alt_above_ground < STAGE_1_MIN_ALT){ 
+	    			// when drone altitude is less than the minimum altitude, enter stage 2
+	    			land_stage = STAGE_2;
+	    			AP_Notify::events.debug_mode_change = 1;
+	    		}
 
-        if(doing_precision_landing && rangefinder_alt_ok()){
-            if (alt_above_ground > 60.0f && alt_above_ground < 200.0f && (pos_control->get_horizontal_error() > precland_acceptable_error)) {
-                // pause drone if horizontal error is higher than the acceptable error
-                cmb_rate = 0.0f;
+	    		break;
+	    	case STAGE_2:
+	    		// when horizontal error is larger than the acceptable error, perform precision loiter
+	    		if(horizontal_error > STAGE_2_MAX_H_ERROR){
+	    			cmb_rate = 0;
+	    		} else if(alt_above_ground < STAGE_2_MIN_ALT){
+	    			// when drone altitude is less than the minimum altitude, enter stage 3
+	    			land_stage = STAGE_3;
+	    			AP_Notify::events.debug_mode_change = 1;	
+	    		}
+	    		break;
+	    	case STAGE_3: // Final Stage
+	    		// when horizontal error is larger than the acceptable error, enter stage reset
+	    		if(horizontal_error > STAGE_3_MAX_H_ERROR){
+	    			land_stage = STAGE_RESET;
+	    			AP_Notify::events.debug_mode_change = 1;
+	    		}
+	    		break;
+	    	case STAGE_RESET:
+	    		// stop landing, and start rising
+	    		cmb_rate = RISE_SPEED;
+	    		
+	    		// when drone altitude is larger than the stage 1 minimum altitude, enter stage 1
+	    		if(alt_above_ground > STAGE_1_MIN_ALT){
+	    			land_stage = STAGE_1;
+	    			AP_Notify::events.debug_mode_change = 1;	
+	    		}
+	    		break;
 
-                // play a tune when pausing
-                AP_Notify::events.debug_mode_change = 1;
-    
-            } else if (alt_above_ground < 30.0f){
-                // Final slow down
-                cmb_rate = -abs(g.land_speed/2.0f);
-            }
-        } 
-        
+	    }
     }
 
     // update altitude target and call position controller

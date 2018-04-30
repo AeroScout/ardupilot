@@ -317,6 +317,9 @@
 #ifndef LAND_SPEED
  # define LAND_SPEED    50          // the descent speed for the final stage of landing in cm/s
 #endif
+#ifndef RISE_SPEED
+ # define RISE_SPEED    20          // the rise speed for the final stage of landing in cm/s if horizontal error is too high
+#endif
 #ifndef LAND_START_ALT
  # define LAND_START_ALT 1000         // altitude in cm where land controller switches to slow rate of descent
 #endif
@@ -332,6 +335,45 @@
 #ifndef LAND_RANGEFINDER_MIN_ALT_CM
 #define LAND_RANGEFINDER_MIN_ALT_CM 200
 #endif
+
+#ifndef STAGE_INIT
+#define STAGE_INIT 0						// Preparation stage of precision landing
+#endif
+#ifndef STAGE_INIT_MIN_ALT
+#define STAGE_INIT_MIN_ALT 200				// altitude in cm where stage is set to stage 1
+#endif
+
+#ifndef STAGE_1
+#define STAGE_1 1							// First stage of precision landing
+#endif
+#ifndef STAGE_1_MIN_ALT
+#define STAGE_1_MIN_ALT 100					// altitude in cm where stage is set to stage 2
+#endif
+#ifndef STAGE_1_MAX_H_ERROR
+#define STAGE_1_MAX_H_ERROR 40				// maximum horizontal error allowed in stage 1
+#endif 
+
+#ifndef STAGE_2
+#define STAGE_2 2							// Second stage of precision landing
+#endif
+#ifndef STAGE_2_MIN_ALT
+#define STAGE_2_MIN_ALT 60					// altitude in cm where stage is set to stage 3
+#endif
+#ifndef STAGE_2_MAX_H_ERROR
+#define STAGE_2_MAX_H_ERROR 20				// maximum horizontal error allowed in stage 2
+#endif 
+
+#ifndef STAGE_3
+#define STAGE_3 3							// Third stage of precision landing 
+#endif
+#ifndef STAGE_3_MAX_H_ERROR
+#define STAGE_3_MAX_H_ERROR 20				// maximum horizontal error allowed in stage 3
+#endif 
+
+#ifndef STAGE_RESET
+#define STAGE_RESET 4						// Reset stage of precision landing (Drone increases altitude to attemp precision landing again -- RESET)
+#endif
+
 
 //////////////////////////////////////////////////////////////////////////////
 // Landing Detector
