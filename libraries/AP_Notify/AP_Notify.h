@@ -100,7 +100,13 @@ public:
         uint32_t tune_next              : 3;    // tuning switched to next parameter
         uint32_t tune_save              : 1;    // tuning saved parameters
         uint32_t tune_error             : 1;    // tuning controller error
-	uint32_t debug_mode_change	: 1;	// 1 when in debug mode
+	    uint32_t debug_mode_change	    : 1;	// 1 when in debug mode
+        uint32_t land_stage_init        : 1;    // 1 when in land stage init of precision landing 
+        uint32_t land_stage_one         : 1;    // 1 when in land stage one of precision landing 
+        uint32_t land_stage_two         : 1;    // 1 when in land stage two of precision landing 
+        uint32_t land_stage_three       : 1;    // 1 when in land stage three of precision landing 
+        uint32_t land_stage_reset       : 1;    // 1 when in land stage reset of precision landing 
+        uint32_t land_stage_force_land  : 1;    // 1 when drone is forced to land in the final stages of precision landing
     };
 
     // The notify flags and values are static to allow direct class access

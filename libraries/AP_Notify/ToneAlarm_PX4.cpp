@@ -166,6 +166,42 @@ void ToneAlarm_PX4::update()
 
     check_cont_tone();
     
+    // tones that are related to precision landing
+    // notify user when in debug mode
+    if(AP_Notify::events.debug_mode_change) {
+	   play_tone(AP_NOTIFY_PX4_TONE_LOUD_1);
+    }
+
+    // notify user when in stage init of precision landing
+    if(AP_Notify::events.land_stage_init) {
+        play_tone(AP_NOTIFY_PX4_TONE_TUNING_START);   
+    }
+
+    // notify user when in stage one of precision landing
+    if(AP_Notify::events.land_stage_one) {
+        play_tone(AP_NOTIFY_PX4_TONE_LOUD_1);   
+    }
+
+    // notify user when in stage two of precision landing
+    if(AP_Notify::events.land_stage_two) {
+        play_tone(AP_NOTIFY_PX4_TONE_LOUD_2);   
+    }
+
+    // notify user when in stage three of precision landing
+    if(AP_Notify::events.land_stage_three) {
+        play_tone(AP_NOTIFY_PX4_TONE_LOUD_3);   
+    }    
+
+    // notify user when in stage reset of precision landing
+    if(AP_Notify::events.land_stage_reset) {
+        play_tone(AP_NOTIFY_PX4_TONE_LOUD_ATTENTION_NEEDED);   
+    }
+
+    // notify user when in stage force land of precision landing
+    if(AP_Notify::events.land_stage_force_land) {
+        play_tone(AP_NOTIFY_PX4_TONE_QUIET_READY_OR_FINISHED);      
+    }
+
     if (AP_Notify::flags.powering_off) {
         if (!flags.powering_off) {
             play_tone(AP_NOTIFY_PX4_TONE_QUIET_SHUTDOWN);
@@ -249,10 +285,6 @@ void ToneAlarm_PX4::update()
         play_tone(AP_NOTIFY_PX4_TONE_LOUD_ATTENTION_NEEDED);
     }
 
-    // notify user when in debug mode
-    if(AP_Notify::events.debug_mode_change) {
-	play_tone(AP_NOTIFY_PX4_TONE_LOUD_1);
-    }
 
     // notify the user when arming fails
     if (AP_Notify::events.arming_failed) {

@@ -340,14 +340,14 @@
 #define STAGE_INIT 0						// Preparation stage of precision landing
 #endif
 #ifndef STAGE_INIT_MIN_ALT
-#define STAGE_INIT_MIN_ALT 200				// altitude in cm where stage is set to stage 1
+#define STAGE_INIT_MIN_ALT 250				// altitude in cm where stage is set to stage 1
 #endif
 
 #ifndef STAGE_1
 #define STAGE_1 1							// First stage of precision landing
 #endif
 #ifndef STAGE_1_MIN_ALT
-#define STAGE_1_MIN_ALT 100					// altitude in cm where stage is set to stage 2
+#define STAGE_1_MIN_ALT 150					// altitude in cm where stage is set to stage 2
 #endif
 #ifndef STAGE_1_MAX_H_ERROR
 #define STAGE_1_MAX_H_ERROR 40				// maximum horizontal error allowed in stage 1
@@ -357,21 +357,25 @@
 #define STAGE_2 2							// Second stage of precision landing
 #endif
 #ifndef STAGE_2_MIN_ALT
-#define STAGE_2_MIN_ALT 60					// altitude in cm where stage is set to stage 3
+#define STAGE_2_MIN_ALT 70					// altitude in cm where stage is set to stage 3
 #endif
 #ifndef STAGE_2_MAX_H_ERROR
-#define STAGE_2_MAX_H_ERROR 20				// maximum horizontal error allowed in stage 2
+#define STAGE_2_MAX_H_ERROR 15				// maximum horizontal error allowed in stage 2
 #endif 
 
 #ifndef STAGE_3
 #define STAGE_3 3							// Third stage of precision landing 
 #endif
 #ifndef STAGE_3_MAX_H_ERROR
-#define STAGE_3_MAX_H_ERROR 20				// maximum horizontal error allowed in stage 3
+#define STAGE_3_MAX_H_ERROR 15				// maximum horizontal error allowed in stage 3
 #endif 
 
 #ifndef STAGE_RESET
 #define STAGE_RESET 4						// Reset stage of precision landing (Drone increases altitude to attemp precision landing again -- RESET)
+#endif
+
+#ifndef STAGE_FORCE_LAND
+#define STAGE_FORCE_LAND 5					// Force land the drone
 #endif
 
 
