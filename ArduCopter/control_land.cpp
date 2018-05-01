@@ -171,12 +171,12 @@ int32_t Copter::land_get_alt_above_ground(void)
 
 void Copter::land_run_vertical_control(bool pause_descent)
 {
-    bool navigating = pos_control->is_active_xy();
+    // bool navigating = pos_control->is_active_xy();
 
 #if PRECISION_LANDING == ENABLED
-    bool doing_precision_landing = !ap.land_repo_active && precland.target_acquired() && navigating;
+    // bool doing_precision_landing = !ap.land_repo_active && precland.target_acquired() && navigating;
 #else
-    bool doing_precision_landing = false;
+    // bool doing_precision_landing = false;
 #endif 
 
     // compute desired velocity
@@ -186,7 +186,7 @@ void Copter::land_run_vertical_control(bool pause_descent)
     const float horizontal_error = pos_control->get_horizontal_error();
 
     float cmb_rate = 0;
-    if (!pause_descent && doing_precision_landing && rangefinder_alt_ok()) {
+    if (!pause_descent && rangefinder_alt_ok()) { // && doing_precision_landing 
     	// Set a constant land speed
 	    cmb_rate = -abs(g.land_speed);
 
@@ -197,8 +197,8 @@ void Copter::land_run_vertical_control(bool pause_descent)
 	    			land_stage = STAGE_1;
 	    			AP_Notify::events.debug_mode_change = 1;
 	    		}
-
 	    		break;
+
 	    	case STAGE_1:
 	    		// when horizontal error is larger than the acceptable error, perform precision loiter
 	    		if(horizontal_error > STAGE_1_MAX_H_ERROR){
@@ -208,8 +208,8 @@ void Copter::land_run_vertical_control(bool pause_descent)
 	    			land_stage = STAGE_2;
 	    			AP_Notify::events.debug_mode_change = 1;
 	    		}
-
 	    		break;
+
 	    	case STAGE_2:
 	    		// when horizontal error is larger than the acceptable error, perform precision loiter
 	    		if(horizontal_error > STAGE_2_MAX_H_ERROR){
@@ -220,6 +220,7 @@ void Copter::land_run_vertical_control(bool pause_descent)
 	    			AP_Notify::events.debug_mode_change = 1;	
 	    		}
 	    		break;
+
 	    	case STAGE_3: // Final Stage
 	    		// when horizontal error is larger than the acceptable error, enter stage reset
 	    		if(horizontal_error > STAGE_3_MAX_H_ERROR){
@@ -227,12 +228,13 @@ void Copter::land_run_vertical_control(bool pause_descent)
 	    			AP_Notify::events.debug_mode_change = 1;
 	    		}
 	    		break;
+
 	    	case STAGE_RESET:
 	    		// stop landing, and start rising
 	    		cmb_rate = RISE_SPEED;
 	    		
 	    		// when drone altitude is larger than the stage 1 minimum altitude, enter stage 1
-	    		if(alt_above_ground > STAGE_1_MIN_ALT){
+	    		if(alt_above_ground > STAGE_INIT_MIN_ALT){
 	    			land_stage = STAGE_1;
 	    			AP_Notify::events.debug_mode_change = 1;	
 	    		}
