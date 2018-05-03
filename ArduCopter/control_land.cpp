@@ -236,11 +236,6 @@ void Copter::land_run_vertical_control(bool pause_descent)
 	    		break;
 
 	    	case STAGE_RESET:
-                // if altitude is too low, force land the drone into enclosure
-                if(alt_above_ground < (STAGE_2_MIN_ALT - 40)){
-                    land_stage = STAGE_FORCE_LAND;
-                    break;
-                }
 	    		// stop landing, and start rising
 	    		cmb_rate = RISE_SPEED;
 	    		
@@ -250,10 +245,6 @@ void Copter::land_run_vertical_control(bool pause_descent)
 	    			AP_Notify::events.land_stage_one = 1;	
 	    		}
 	    		break;
-
-            case STAGE_FORCE_LAND:
-                AP_Notify::events.land_stage_force_land = 1;
-                break;
 
 	    }
     }

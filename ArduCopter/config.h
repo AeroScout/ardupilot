@@ -374,10 +374,6 @@
 #define STAGE_RESET 4						// Reset stage of precision landing (Drone increases altitude to attemp precision landing again -- RESET)
 #endif
 
-#ifndef STAGE_FORCE_LAND
-#define STAGE_FORCE_LAND 5					// Force land the drone
-#endif
-
 
 //////////////////////////////////////////////////////////////////////////////
 // Landing Detector
