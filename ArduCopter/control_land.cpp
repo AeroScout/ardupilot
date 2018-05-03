@@ -4,7 +4,7 @@ static bool land_with_gps;
 
 uint32_t land_start_time;
 bool land_pause;
-uint16_t land_stage;
+PrecLandStage land_stage;
 
 // land_init - initialise land controller
 bool Copter::land_init(bool ignore_checks)
@@ -180,8 +180,6 @@ void Copter::land_run_vertical_control(bool pause_descent)
 #endif 
 
     // compute desired velocity
-    // float precland_acceptable_error = 20.0f;
-    // const float precland_min_descent_speed = 10.0f;
     const int32_t alt_above_ground = land_get_alt_above_ground();
     const float horizontal_error = pos_control->get_horizontal_error();
 

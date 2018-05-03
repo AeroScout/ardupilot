@@ -269,9 +269,19 @@ enum ThrowModeType {
     ThrowType_Drop = 1
 };
 
+// Land State Types
 enum LandStateType {
     LandStateType_FlyToLocation = 0,
     LandStateType_Descending = 1
+};
+
+// Precision Landing Stages
+enum PrecLandStage {
+    STAGE_INIT,
+    STAGE_1,
+    STAGE_2,
+    STAGE_3,
+    STAGE_RESET
 };
 
 enum PayloadPlaceStateType {
