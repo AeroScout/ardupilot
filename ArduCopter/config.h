@@ -335,27 +335,23 @@
 #ifndef LAND_RANGEFINDER_MIN_ALT_CM
 #define LAND_RANGEFINDER_MIN_ALT_CM 200
 #endif
-
 #ifndef STAGE_INIT_MIN_ALT
-#define STAGE_INIT_MIN_ALT 250				// altitude in cm where stage is set to stage 1
+ #define STAGE_INIT_MIN_ALT 250				// minimum altitude in cm that is allowed in stage init
 #endif
-
 #ifndef STAGE_1_MIN_ALT
-#define STAGE_1_MIN_ALT 150					// altitude in cm where stage is set to stage 2
+ #define STAGE_1_MIN_ALT 200				// minimum altitude in cm that is allowed in stage one
 #endif
 #ifndef STAGE_1_MAX_H_ERROR
-#define STAGE_1_MAX_H_ERROR 40				// maximum horizontal error allowed in stage 1
+ #define STAGE_1_MAX_H_ERROR 25				// maximum horizontal error allowed in stage 1
 #endif 
-
 #ifndef STAGE_2_MIN_ALT
-#define STAGE_2_MIN_ALT 70					// altitude in cm where stage is set to stage 3
+ #define STAGE_2_MIN_ALT 100					// minimum altitude in cm that is allowed in stage two
 #endif
 #ifndef STAGE_2_MAX_H_ERROR
-#define STAGE_2_MAX_H_ERROR 15				// maximum horizontal error allowed in stage 2
+ #define STAGE_2_MAX_H_ERROR 10				// maximum horizontal error allowed in stage 2
 #endif 
-
 #ifndef STAGE_3_MAX_H_ERROR
-#define STAGE_3_MAX_H_ERROR 15				// maximum horizontal error allowed in stage 3
+ #define STAGE_3_MAX_H_ERROR 5				// maximum horizontal error allowed in stage 3
 #endif 
 
 

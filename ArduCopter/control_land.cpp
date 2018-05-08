@@ -201,6 +201,7 @@ void Copter::land_run_vertical_control(bool pause_descent)
 	    		// when horizontal error is larger than the acceptable error, perform precision loiter
 	    		if(horizontal_error > STAGE_1_MAX_H_ERROR || !precland.target_acquired()){
 	    			cmb_rate = 0;
+                    AP_Notify::events.land_stage_one = 1;
 	    		} else if(alt_above_ground < STAGE_1_MIN_ALT){ 
 	    			// when drone altitude is less than the minimum altitude, enter stage 2
 	    			land_stage = STAGE_2;
@@ -209,31 +210,55 @@ void Copter::land_run_vertical_control(bool pause_descent)
 	    		break;
 
 	    	case STAGE_2:
-	    		// when horizontal error is larger than the acceptable error, perform precision loiter
+	    		// when horizontal error is larger than the acceptable error, perform precision 
+                // loiter until STAGE_2_MAX_H_ERROR is within parameters, then go to stage 3 
 	    		if(horizontal_error > STAGE_2_MAX_H_ERROR){
 	    			cmb_rate = 0;
-	    		} else if(!precland.target_acquired()){
+	    		} else {
+                    land_stage = STAGE_3;
+                    AP_Notify::events.land_stage_three = 1; 
+                }
+
+
+
+                /*else if(!precland.target_acquired()){
 	    			// when drone loses target, enter stage reset
-	    			land_stage = STAGE_RESET;
-	    			cmb_rate = RISE_SPEED;
+	    			// land_stage = STAGE_RESET;
+	    			// cmb_rate = RISE_SPEED;
                     AP_Notify::events.land_stage_reset = 1;
 	    		} else if(alt_above_ground < STAGE_2_MIN_ALT){
 	    			// when drone altitude is less than the minimum altitude, enter stage 3
 	    			land_stage = STAGE_3;
 	    			AP_Notify::events.land_stage_three = 1;	
-	    		}
+	    		}*/
+
+
 	    		break;
 
-	    	case STAGE_3: // Final Stage
-	    		// enter stage reset if in the upper 40 cm altitude limit of STAGE 3 and precision landing is likely to fail
-	    		if(alt_above_ground > (STAGE_2_MIN_ALT - 40) && (horizontal_error > STAGE_3_MAX_H_ERROR || !precland.target_acquired())){
+	    	case STAGE_3: // Stage 3
+	    		// Descend without pausing, assuming the error is driven to very low in stage 2
+	    		if (horizontal_error > STAGE_2_MAX_H_ERROR){
+                    AP_Notify::events.land_stage_one = 1;
+                }
+
+                if (alt_above_ground > STAGE_2_MIN_ALT) {
+                    land_stage = STAGE_4;
+                }
+                /*if(alt_above_ground > (STAGE_2_MIN_ALT - 30) && (horizontal_error > STAGE_3_MAX_H_ERROR || !precland.target_acquired())){
 	    			land_stage = STAGE_RESET;
-                    AP_Notify::events.land_stage_reset = 1;
-	    		}
+                    AP_Notify::events.land_stage_one = 1;
+	    		}*/
 
 	    		break;
 
-	    	case STAGE_RESET:
+            case STAGE_4: // Stage 4
+                if (horizontal_error > STAGE_3_MAX_H_ERROR){
+                    AP_Notify::events.land_stage_one = 1;
+                }
+                break;
+
+	    	/*
+            case STAGE_RESET:
 	    		// stop landing, and start rising
 	    		cmb_rate = RISE_SPEED;
 	    		
@@ -243,6 +268,7 @@ void Copter::land_run_vertical_control(bool pause_descent)
 	    			AP_Notify::events.land_stage_one = 1;	
 	    		}
 	    		break;
+            */
 
 	    }
     }

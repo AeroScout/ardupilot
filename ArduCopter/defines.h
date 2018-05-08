@@ -281,7 +281,8 @@ enum PrecLandStage {
     STAGE_1,
     STAGE_2,
     STAGE_3,
-    STAGE_RESET
+    STAGE_4,
+    //STAGE_RESET
 };
 
 enum PayloadPlaceStateType {
