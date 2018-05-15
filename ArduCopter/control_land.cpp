@@ -6,6 +6,11 @@ uint32_t land_start_time;
 bool land_pause;
 PrecLandStage land_stage;
 
+// Precision Landing stage_2 starting error
+float stage_2_original_error;
+int16_t stage_2_counter;
+
+
 // land_init - initialise land controller
 bool Copter::land_init(bool ignore_checks)
 {
@@ -36,6 +41,9 @@ bool Copter::land_init(bool ignore_checks)
 
     // initialize land state to INIT state
     land_stage = STAGE_INIT;
+
+    //initialize stage 2 counter to zero
+    stage_2_counter = 0;
 
     // reset flag indicating if pilot has applied roll or pitch inputs during landing
     ap.land_repo_active = false;
@@ -194,12 +202,15 @@ void Copter::land_run_vertical_control(bool pause_descent)
                 // we will need to slow down the drone before we enter into precision loiter
 	    		if(alt_above_ground < STAGE_INIT_MIN_ALT){
 	    			land_stage = STAGE_1;
-                    cmb_rate = 20;
+                    cmb_rate = -PLAND_SPEED; 
 	    			AP_Notify::events.land_stage_one = 1;
 	    		}
 	    		break;
 
 	    	case STAGE_1:
+	    		// slow down descent speed in stage 1
+	    		cmb_rate = -PLAND_SPEED; 
+
 	    		// Descend into precision loiter height 250cm
                 if(alt_above_ground < STAGE_1_MIN_ALT){
                     cmb_rate = 0;
@@ -209,68 +220,78 @@ void Copter::land_run_vertical_control(bool pause_descent)
 	    		break;
 
 	    	case STAGE_2:
-	    		// Precision Loiter between 250cm and 200cm
+	    		// Precision Loiter between 250cm and 220cm
 	    		cmb_rate = 0;
-                if (alt_above_ground < STAGE_2_MIN_ALT){
-                    cmb_rate = 20;
-                    land_stage = STAGE_1;
-                }else if(horizontal_error < PLOITER_MAX_H_ERROR){
-                    land_stage = STAGE_3;
-                    AP_Notify::events.land_stage_three = 1;         
-	    		}
 
-                /*else if(!precland.target_acquired()){
-	    			// when drone loses target, enter stage reset
-	    			// land_stage = STAGE_RESET;
-	    			// cmb_rate = RISE_SPEED;
+                if (alt_above_ground < STAGE_2_MIN_ALT){ 
+                	// Enter Stage Reset if altitude is lower than the minimum height and horizontal error is large
+                    land_stage = STAGE_RESET;
                     AP_Notify::events.land_stage_reset = 1;
-	    		} else if(alt_above_ground < STAGE_2_MIN_ALT){
-	    			// when drone altitude is less than the minimum altitude, enter stage 3
-	    			land_stage = STAGE_3;
-	    			AP_Notify::events.land_stage_three = 1;	
-	    		}*/
 
+                } else if(alt_above_ground > STAGE_2_MIN_ALT && horizontal_error < STAGE_2_MAX_H_ERROR){ // between 250 - 230
+                    // Enter Stage 3 if altitude is in the top 20 cm of stage 2 and horizontal error is acceptable
+                    land_stage = STAGE_2D5;
+                    stage_2_counter = 0;
+                    stage_2_original_error = horizontal_error;
+                    AP_Notify::events.land_stage_three = 1;     
+
+	    		} 
 
 	    		break;
 
-	    	case STAGE_3: // Stage 3
+            case STAGE_2D5: // To check for drifting in stage 2
+                // If the horizontal error is less than the limit for the amount of counters
+                // Then we can continue to descend
+                if (stage_2_counter >= STAGE_2_COUNTER_LIMIT) {
+                    land_stage = STAGE_3;
+                    stage_2_original_error = horizontal_error;
+                    AP_Notify::events.land_stage_three = 1;   
+
+                } else {
+                    if (horizontal_error < stage_2_original_error + DRIFT_TOLERANCE_CM) {
+                        stage_2_counter++;
+                    } else if (horizontal_error > stage_2_original_error + DRIFT_TOLERANCE_CM) {
+                        land_stage = STAGE_1;
+                    }
+                }
+
+                
+
+            break;
+
+	    	case STAGE_3:
 	    		// Descend without pausing, assuming the error is driven to very low in stage 2
-	    		if (horizontal_error > 10){
-                    AP_Notify::events.land_stage_one = 1;
-                    //annoying buzz
+                cmb_rate = -PLAND_SPEED;
+
+	    		if (horizontal_error > stage_2_original_error + DRIFT_TOLERANCE_CM){
+                    cmb_rate = 0;
+                    land_stage = STAGE_RESET;
+                    AP_Notify::events.land_stage_reset = 1; //annoying buzz
                 }
 
                 if (alt_above_ground < STAGE_3_MIN_ALT) {
                     land_stage = STAGE_4;
                 }
-
-                /*if(alt_above_ground > (STAGE_2_MIN_ALT - 30) && (horizontal_error > STAGE_3_MAX_H_ERROR || !precland.target_acquired())){
-	    			land_stage = STAGE_RESET;
-                    AP_Notify::events.land_stage_one = 1;
-	    		}*/
-
+                
 	    		break;
 
             case STAGE_4:
-                if (horizontal_error > 5) {
-                    AP_Notify::events.land_stage_one = 1;
-                    //annoying buzz
+                if (horizontal_error > STAGE_4_MAX_H_ERROR) {
+                    //AP_Notify::events.land_stage_reset = 1; //annoying buzz
                 }
 
+                break;
 
-	    	/*
             case STAGE_RESET:
-	    		// stop landing, and start rising
-	    		cmb_rate = RISE_SPEED;
-	    		
-	    		// when drone altitude is larger than the stage 1 minimum altitude, enter stage 1
-	    		if(alt_above_ground > STAGE_INIT_MIN_ALT){
-	    			land_stage = STAGE_1;
-	    			AP_Notify::events.land_stage_one = 1;	
-	    		}
-	    		break;
-            */
+            	cmb_rate = RISE_SPEED;
 
+            	// Rise back to the specified altitude 
+            	if (alt_above_ground > STAGE_1_MIN_ALT){
+            		land_stage = STAGE_1;
+                    cmb_rate = 0;	
+            	}
+
+            	break;
 	    }
     }
 

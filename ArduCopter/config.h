@@ -317,6 +317,10 @@
 #ifndef LAND_SPEED
  # define LAND_SPEED    50          // the descent speed for the final stage of landing in cm/s
 #endif
+#ifndef PLAND_SPEED
+ # define PLAND_SPEED 20
+#endif
+
 #ifndef RISE_SPEED
  # define RISE_SPEED    20          // the rise speed for the final stage of landing in cm/s if horizontal error is too high
 #endif
@@ -336,26 +340,32 @@
 #define LAND_RANGEFINDER_MIN_ALT_CM 200
 #endif
 #ifndef STAGE_INIT_MIN_ALT
- #define STAGE_INIT_MIN_ALT 350				// minimum altitude in cm that is allowed in stage init
+ #define STAGE_INIT_MIN_ALT 450				// minimum altitude in cm that is allowed in stage init
 #endif
 #ifndef STAGE_1_MIN_ALT
- #define STAGE_1_MIN_ALT 250				// minimum altitude in cm that is allowed in stage one
+ #define STAGE_1_MIN_ALT 230				// minimum altitude in cm that is allowed in stage one
 #endif
-#ifndef PLOITER_MAX_H_ERROR
- #define PLOITER_MAX_H_ERROR 10				// maximum horizontal error allowed in stage 1
-#endif 
 #ifndef STAGE_2_MIN_ALT
  #define STAGE_2_MIN_ALT 200					// minimum altitude in cm that is allowed in stage two
 #endif
 #ifndef STAGE_2_MAX_H_ERROR
  #define STAGE_2_MAX_H_ERROR 10				// maximum horizontal error allowed in stage 2
 #endif 
+#ifndef STAGE_2_COUNTER_LIMIT
+ #define STAGE_2_COUNTER_LIMIT 10				// maximum horizontal error allowed in stage 2
+#endif 
+#ifndef DRIFT_TOLERANCE_CM
+ #define DRIFT_TOLERANCE_CM 2
+#endif
 #ifndef STAGE_3_MAX_H_ERROR
- #define STAGE_3_MAX_H_ERROR 5				// maximum horizontal error allowed in stage 3
+ #define STAGE_3_MAX_H_ERROR 10				// maximum horizontal error allowed in stage 3
 #endif 
 #ifndef STAGE_3_MIN_ALT
- #define STAGE_3_MIN_ALT 150					// minimum altitude in cm that is allowed in stage two
+ #define STAGE_3_MIN_ALT 170					// minimum altitude in cm that is allowed in stage two
 #endif
+#ifndef STAGE_4_MAX_H_ERROR
+ #define STAGE_4_MAX_H_ERROR 5				// maximum horizontal error allowed in stage 3
+#endif 
 
 
 //////////////////////////////////////////////////////////////////////////////
