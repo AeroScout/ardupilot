@@ -355,7 +355,7 @@
  #define STAGE_2_COUNTER_LIMIT 10				// maximum horizontal error allowed in stage 2
 #endif 
 #ifndef DRIFT_TOLERANCE_CM
- #define DRIFT_TOLERANCE_CM 2
+ #define DRIFT_TOLERANCE_CM 5
 #endif
 #ifndef STAGE_3_MAX_H_ERROR
  #define STAGE_3_MAX_H_ERROR 10				// maximum horizontal error allowed in stage 3

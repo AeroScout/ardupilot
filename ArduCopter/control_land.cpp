@@ -243,15 +243,18 @@ void Copter::land_run_vertical_control(bool pause_descent)
                 // If the horizontal error is less than the limit for the amount of counters
                 // Then we can continue to descend
                 if (stage_2_counter >= STAGE_2_COUNTER_LIMIT) {
-                    land_stage = STAGE_3;
-                    stage_2_original_error = horizontal_error;
-                    AP_Notify::events.land_stage_three = 1;   
+                    if (stage_2_counter > STAGE_2_COUNTER_LIMIT - 3) {
+                        land_stage = STAGE_3;
+                        stage_2_original_error = horizontal_error;
+                        AP_Notify::events.land_stage_three = 1;   
+                    } else {
+                        land_stage = STAGE_1;
+                        AP_Notify::events.land_stage_reset = 1;
+                    }
 
                 } else {
                     if (horizontal_error < stage_2_original_error + DRIFT_TOLERANCE_CM) {
                         stage_2_counter++;
-                    } else if (horizontal_error > stage_2_original_error + DRIFT_TOLERANCE_CM) {
-                        land_stage = STAGE_1;
                     }
                 }
 
