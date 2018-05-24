@@ -6,6 +6,11 @@ uint32_t land_start_time;
 bool land_pause;
 PrecLandStage land_stage;
 
+const int int_arraySize = 10;
+float array_latestHorizontalError[int_arraySize];
+int int_attemptLandingCount = 0;  // How many times in a row have we been doing this
+int int_landAttemptThreshold = 10;  // How many within tollerance we need of the last "int_arraySize"
+
 // Precision Landing stage_2 starting error
 //float stage_2_original_error;
 //int16_t stage_2_counter;
@@ -214,6 +219,7 @@ void Copter::land_run_vertical_control(bool pause_descent)
 	    		// Descend into precision loiter height 250cm
                 if(alt_above_ground < STAGE_1_MIN_ALT){
                     cmb_rate = 0;
+                    int_attemptLandingCount = 0;
                     land_stage = STAGE_2;
 	    			AP_Notify::events.land_stage_two = 1;
 	    		}
@@ -227,15 +233,51 @@ void Copter::land_run_vertical_control(bool pause_descent)
                 	// Enter Stage Reset if altitude is lower than the minimum height and horizontal error is large
                     land_stage = STAGE_RESET;
                     AP_Notify::events.land_stage_reset = 1;
+                    int_attemptLandingCount = 0;
 
-                } else if(alt_above_ground > STAGE_2_MIN_ALT && horizontal_error < STAGE_2_MAX_H_ERROR){ // between 250 - 230
-                    // Enter Stage 3 if altitude is in the top 20 cm of stage 2 and horizontal error is acceptable
-                    land_stage = STAGE_3;
-                    //stage_2_counter = 0;
-                    //stage_2_original_error = horizontal_error;
-                    AP_Notify::events.land_stage_three = 1;     
+                } else if(alt_above_ground > STAGE_2_MIN_ALT && horizontal_error < STAGE_2_MAX_H_ERROR){ 
+                    // We are hovering and trying to stabilise, we will stay in stage 2 unless things get way out of wack
 
-	    		} 
+                    if (horizontal_error < (DRIFT_STAGE_2_TARGET_CM + DRIFT_TOLERANCE_CM))
+                    {
+                        array_latestHorizontalError[int_attemptLandingCount % int_arraySize] = horizontal_error;
+                        int_attemptLandingCount ++;
+                        
+                        int int_errorMax = 0, int_errorMin = (DRIFT_STAGE_2_TARGET_CM + DRIFT_TOLERANCE_CM);
+                        
+                        for (int i = 0; i < int_attemptLandingCount && i < int_arraySize; i++)
+                        {
+                            // Here we need to set the largest and smallest to find the variance
+                            if (array_latestHorizontalError[i] < int_errorMin)
+                            {
+                                int_errorMin = array_latestHorizontalError[i];
+                            }
+                            else if (array_latestHorizontalError[i] > int_errorMax)
+                            {
+                                int_errorMax = array_latestHorizontalError[i];
+                            }
+                        }
+
+                        if ((int_errorMax - int_errorMin) < DRIFT_TOLERANCE_CM && int_attemptLandingCount > int_arraySize)
+                        {
+                            land_stage = STAGE_3;
+                            //stage_2_counter = 0;
+                            //stage_2_original_error = horizontal_error;
+                            AP_Notify::events.land_stage_three = 1; 
+                        }
+                    }
+                    else
+                    {
+                        int_attemptLandingCount = 0;
+                    }
+	    		}
+                else if (alt_above_ground > STAGE_1_MIN_ALT)
+                {
+                    int_attemptLandingCount = 0;
+
+                    land_stage = STAGE_1;
+                    AP_Notify::events.land_stage_one = 1;
+                }
 
 	    		break;
 
@@ -265,8 +307,9 @@ void Copter::land_run_vertical_control(bool pause_descent)
 
 	    	case STAGE_3:
 	    		// Descend without pausing, assuming the error is driven to very low in stage 2
-                cmb_rate = -PLAND_SPEED;
+                //cmb_rate = -PLAND_SPEED;
 
+                /*
 	    		if (horizontal_error > STAGE_3_MAX_H_ERROR){
                     cmb_rate = 0;
                     land_stage = STAGE_RESET;
@@ -276,13 +319,13 @@ void Copter::land_run_vertical_control(bool pause_descent)
                 if (alt_above_ground < STAGE_3_MIN_ALT) {
                     land_stage = STAGE_4;
                 }
-                
+                */
 	    		break;
 
             case STAGE_4:
-                if (horizontal_error > STAGE_4_MAX_H_ERROR) {
+                //if (horizontal_error > STAGE_4_MAX_H_ERROR) {
                     //AP_Notify::events.land_stage_reset = 1; //annoying buzz
-                }
+                //}
 
                 break;
 
