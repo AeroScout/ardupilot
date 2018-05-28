@@ -6,15 +6,10 @@ uint32_t land_start_time;
 bool land_pause;
 PrecLandStage land_stage;
 
-const int int_arraySize = 10;
+const int int_arraySize = 15;
 float array_latestHorizontalError[int_arraySize];
 int int_attemptLandingCount = 0;  // How many times in a row have we been doing this
-int int_landAttemptThreshold = 10;  // How many within tollerance we need of the last "int_arraySize"
-
-// Precision Landing stage_2 starting error
-//float stage_2_original_error;
-//int16_t stage_2_counter;
-
+int int_landMinAttemptThreshold = 50;  // How many within tollerance we need of the last "int_arraySize"
 
 // land_init - initialise land controller
 bool Copter::land_init(bool ignore_checks)
@@ -197,13 +192,13 @@ void Copter::land_run_vertical_control(bool pause_descent)
     const float horizontal_error = pos_control->get_horizontal_error();
 
     float cmb_rate = 0;
-    if (!pause_descent && rangefinder_alt_ok()) { // && doing_precision_landing 
+    if (!pause_descent && rangefinder_alt_ok() && precland.target_acquired()) { // && doing_precision_landing 
     	// Set a constant land speed
 	    cmb_rate = -abs(g.land_speed);
 
 	    switch(land_stage){
 	    	case STAGE_INIT:
-	    		// when drone altitude is less than the minimum altitude, enter stage 1
+	    		// Descend at normal speed until we reach 450cm
                 // we will need to slow down the drone before we enter into precision loiter
 	    		if(alt_above_ground < STAGE_INIT_MIN_ALT){
 	    			land_stage = STAGE_1;
@@ -213,10 +208,10 @@ void Copter::land_run_vertical_control(bool pause_descent)
 	    		break;
 
 	    	case STAGE_1:
-	    		// slow down descent speed in stage 1
+	    		// slow down descent speed in stage 1 (20cm/s)
 	    		cmb_rate = -PLAND_SPEED; 
 
-	    		// Descend into precision loiter height 250cm
+	    		// Descend until 220cm
                 if(alt_above_ground < STAGE_1_MIN_ALT){
                     cmb_rate = 0;
                     int_attemptLandingCount = 0;
@@ -226,113 +221,71 @@ void Copter::land_run_vertical_control(bool pause_descent)
 	    		break;
 
 	    	case STAGE_2:
-	    		// Precision Loiter between 250cm and 220cm
+	    		// Do the drift check at whatever height we exited stage 1
 	    		cmb_rate = 0;
 
-                if (alt_above_ground < STAGE_2_MIN_ALT){ 
-                	// Enter Stage Reset if altitude is lower than the minimum height and horizontal error is large
-                    land_stage = STAGE_RESET;
-                    AP_Notify::events.land_stage_reset = 1;
-                    int_attemptLandingCount = 0;
-
-                } else if(alt_above_ground > STAGE_2_MIN_ALT && horizontal_error < STAGE_2_MAX_H_ERROR){ 
-                    // We are hovering and trying to stabilise, we will stay in stage 2 unless things get way out of wack
-
-                    if (horizontal_error < (DRIFT_STAGE_2_TARGET_CM + DRIFT_TOLERANCE_CM))
-                    {
-                        array_latestHorizontalError[int_attemptLandingCount % int_arraySize] = horizontal_error;
-                        int_attemptLandingCount ++;
-                        
-                        int int_errorMax = 0, int_errorMin = (DRIFT_STAGE_2_TARGET_CM + DRIFT_TOLERANCE_CM);
-                        
-                        for (int i = 0; i < int_attemptLandingCount && i < int_arraySize; i++)
-                        {
-                            // Here we need to set the largest and smallest to find the variance
-                            if (array_latestHorizontalError[i] < int_errorMin)
-                            {
-                                int_errorMin = array_latestHorizontalError[i];
-                            }
-                            else if (array_latestHorizontalError[i] > int_errorMax)
-                            {
-                                int_errorMax = array_latestHorizontalError[i];
-                            }
+                // The error must always remain 14cm (10cm + 4cm)
+                if (horizontal_error < (DRIFT_STAGE_2_TARGET_CM + DRIFT_TOLERANCE_CM)) {
+                    // Modulo of our array, used to step through our array incrementally (int_arraysize = 30)
+                    array_latestHorizontalError[int_attemptLandingCount % int_arraySize] = horizontal_error;
+                    int_attemptLandingCount ++;
+                    
+                    // Set the min error to some large number
+                    int int_errorMax = 0, int_errorMin = (DRIFT_STAGE_2_TARGET_CM + DRIFT_TOLERANCE_CM);
+                    
+                    for (int i = 0; i < int_attemptLandingCount && i < int_arraySize; i++) {
+                        // Here we need to set the largest and smallest to find the variance
+                        if (array_latestHorizontalError[i] < int_errorMin) {
+                            
+                            int_errorMin = array_latestHorizontalError[i];
                         }
-
-                        if ((int_errorMax - int_errorMin) < DRIFT_TOLERANCE_CM && int_attemptLandingCount > int_arraySize)
-                        {
-                            land_stage = STAGE_3;
-                            //stage_2_counter = 0;
-                            //stage_2_original_error = horizontal_error;
-                            AP_Notify::events.land_stage_three = 1; 
+                        else if (array_latestHorizontalError[i] > int_errorMax) {
+                            
+                            int_errorMax = array_latestHorizontalError[i];
                         }
                     }
-                    else
-                    {
-                        int_attemptLandingCount = 0;
-                    }
-	    		}
-                else if (alt_above_ground > STAGE_1_MIN_ALT)
-                {
-                    int_attemptLandingCount = 0;
 
-                    land_stage = STAGE_1;
-                    AP_Notify::events.land_stage_one = 1;
+                    // Allowed to land if Varience is low (4mm) and at least 50 sets of error data is recorded (500ms)
+                    if ((int_errorMax - int_errorMin) < DRIFT_TOLERANCE_CM && int_attemptLandingCount > int_landMinAttemptThreshold) {
+                        
+                        land_stage = STAGE_3;
+
+                        AP_Notify::events.land_stage_three = 1; 
+                    }
+                }
+                else {
+                    int_attemptLandingCount = 0;
                 }
 
 	    		break;
 
-            case STAGE_2D5: // To check for drifting in stage 2
-                // If the horizontal error is less than the limit for the amount of counters
-                // Then we can continue to descend
-                /*
-                if (stage_2_counter >= STAGE_2_COUNTER_LIMIT) {
-                    if (stage_2_counter > STAGE_2_COUNTER_LIMIT - 3) {
-                        land_stage = STAGE_3;
-                        stage_2_original_error = horizontal_error;
-                        AP_Notify::events.land_stage_three = 1;   
-                    } else {
-                        land_stage = STAGE_1;
-                        AP_Notify::events.land_stage_reset = 1;
-                    }
-
-                } else {
-                    if (horizontal_error < stage_2_original_error + DRIFT_TOLERANCE_CM) {
-                        stage_2_counter++;
-                    }
-                }
-                */
-                
-
-            break;
-
 	    	case STAGE_3:
-	    		// Descend without pausing, assuming the error is driven to very low in stage 2
-                //cmb_rate = -PLAND_SPEED;
 
-                /*
-	    		if (horizontal_error > STAGE_3_MAX_H_ERROR){
+                // Only reset if the error is more than 20cm (it means some serious drifting has occured)
+	    		if (horizontal_error > STAGE_3_MAX_H_ERROR) {
                     cmb_rate = 0;
                     land_stage = STAGE_RESET;
                     AP_Notify::events.land_stage_reset = 1; //annoying buzz
                 }
 
+                // Once copter is below 170cm then go into stage 4
                 if (alt_above_ground < STAGE_3_MIN_ALT) {
                     land_stage = STAGE_4;
                 }
-                */
+                
 	    		break;
 
             case STAGE_4:
-                //if (horizontal_error > STAGE_4_MAX_H_ERROR) {
-                    //AP_Notify::events.land_stage_reset = 1; //annoying buzz
-                //}
+
+                // Descend without pause, point of no return
 
                 break;
 
             case STAGE_RESET:
             	cmb_rate = RISE_SPEED;
+                AP_Notify::events.land_stage_reset = 1;
 
-            	// Rise back to the specified altitude 
+            	// Rise back to 170cm, but we can expect some overshoot
             	if (alt_above_ground > STAGE_2_MIN_ALT){
             		land_stage = STAGE_1;
                     cmb_rate = 0;	
@@ -340,6 +293,10 @@ void Copter::land_run_vertical_control(bool pause_descent)
 
             	break;
 	    }
+    } else {
+        // Emergency landing without beacon
+        cmb_rate = -abs(g.land_speed);
+        AP_Notify::events.land_stage_one = 1;
     }
 
     // update altitude target and call position controller
