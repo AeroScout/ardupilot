@@ -216,7 +216,7 @@ void Copter::land_run_vertical_control(bool pause_descent)
 	    		cmb_rate = -PLAND_SPEED; 
 
 	    		// Descend until 200cm
-                if(alt_above_ground < STAGE_1_MIN_ALT){
+                if(alt_above_ground < STAGE_1_MIN_ALT) {
                     cmb_rate = 0;
                     land_stage = STAGE_2;
 	    			AP_Notify::events.land_stage_two = 1;
@@ -233,6 +233,7 @@ void Copter::land_run_vertical_control(bool pause_descent)
 
 	    	case STAGE_2:
 	    		// Do the drift check at whatever height we exited stage 1
+                // This height should be somewhere between 220 -> 180cm for optimal performance
 	    		cmb_rate = 0;
 
                 // The error must always remain 10cm (6cm + 4cm)
@@ -248,24 +249,28 @@ void Copter::land_run_vertical_control(bool pause_descent)
                     for (int i = 0; i < int_attemptLandingCount && i < int_arraySize; i++) {
                         // Here we need to set the largest and smallest to find the variance
                         if (array_latestHorizontalError[i] < int_errorMin) {
-                            
                             int_errorMin = array_latestHorizontalError[i];
                         }
                         else if (array_latestHorizontalError[i] > int_errorMax) {
-                            
                             int_errorMax = array_latestHorizontalError[i];
                         }
                     }
 
                     // Allowed to land if Varience is low (4mm) and at least 15 sets of error data is recorded (500ms)
                     if ((int_errorMax - int_errorMin) < DRIFT_TOLERANCE_CM && int_attemptLandingCount > int_landMinAttemptThreshold) {
-                        
                         land_stage = STAGE_3;
-
                         AP_Notify::events.land_stage_three = 1; 
                     }
                 }
                 else {
+                    // Height checker, but if the copter is descending through stage 2 quickly and meets error requirements this will not be triggered
+                    // The height will only be corrected if the variance or the error is huge when in stage 2
+                    if (alt_above_ground > 230) {
+                        land_stage = STAGE_1;
+                    } else if (alt_above_ground < 150) {
+                        land_stage = STAGE_RESET;
+                    }
+
                     int_attemptLandingCount = 0;
                 }
 
