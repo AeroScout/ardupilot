@@ -198,39 +198,51 @@ void Copter::land_run_vertical_control(bool pause_descent)
 
 	    switch(land_stage){
 	    	case STAGE_INIT:
-	    		// Descend at normal speed until we reach 450cm
+	    		// Descend at normal speed until we reach 400cm
                 // we will need to slow down the drone before we enter into precision loiter
 	    		if(alt_above_ground < STAGE_INIT_MIN_ALT){
 	    			land_stage = STAGE_1;
                     cmb_rate = -PLAND_SPEED; 
 	    			AP_Notify::events.land_stage_one = 1;
 	    		}
+
+                // Update altitude target
+                pos_control->set_alt_target_from_climb_rate(cmb_rate, G_Dt, false);
+
 	    		break;
 
 	    	case STAGE_1:
 	    		// slow down descent speed in stage 1 (20cm/s)
 	    		cmb_rate = -PLAND_SPEED; 
 
-	    		// Descend until 220cm
+	    		// Descend until 200cm
                 if(alt_above_ground < STAGE_1_MIN_ALT){
                     cmb_rate = 0;
-                    int_attemptLandingCount = 0;
                     land_stage = STAGE_2;
 	    			AP_Notify::events.land_stage_two = 1;
+
+                    // Reset the counter for our drift detector
+                    int_attemptLandingCount = 0;
+
 	    		}
+
+                // Update altitude target (no feed forward)
+                pos_control->set_alt_target_from_climb_rate(cmb_rate, G_Dt, false);
+
 	    		break;
 
 	    	case STAGE_2:
 	    		// Do the drift check at whatever height we exited stage 1
 	    		cmb_rate = 0;
 
-                // The error must always remain 14cm (10cm + 4cm)
+                // The error must always remain 10cm (6cm + 4cm)
                 if (horizontal_error < (DRIFT_STAGE_2_TARGET_CM + DRIFT_TOLERANCE_CM)) {
-                    // Modulo of our array, used to step through our array incrementally (int_arraysize = 30)
+                    
+                    // Modulo of our array, used to step through our array incrementally (int_arraysize = 15)
                     array_latestHorizontalError[int_attemptLandingCount % int_arraySize] = horizontal_error;
                     int_attemptLandingCount ++;
                     
-                    // Set the min error to some large number
+                    // Set the int_errorMin error to some large number
                     int int_errorMax = 0, int_errorMin = (DRIFT_STAGE_2_TARGET_CM + DRIFT_TOLERANCE_CM);
                     
                     for (int i = 0; i < int_attemptLandingCount && i < int_arraySize; i++) {
@@ -245,7 +257,7 @@ void Copter::land_run_vertical_control(bool pause_descent)
                         }
                     }
 
-                    // Allowed to land if Varience is low (4mm) and at least 50 sets of error data is recorded (500ms)
+                    // Allowed to land if Varience is low (4mm) and at least 15 sets of error data is recorded (500ms)
                     if ((int_errorMax - int_errorMin) < DRIFT_TOLERANCE_CM && int_attemptLandingCount > int_landMinAttemptThreshold) {
                         
                         land_stage = STAGE_3;
@@ -256,6 +268,9 @@ void Copter::land_run_vertical_control(bool pause_descent)
                 else {
                     int_attemptLandingCount = 0;
                 }
+
+                // Update altitude target (no feed forward) 
+                pos_control->set_alt_target_from_climb_rate(cmb_rate, G_Dt, false);
 
 	    		break;
 
@@ -268,16 +283,42 @@ void Copter::land_run_vertical_control(bool pause_descent)
                     AP_Notify::events.land_stage_reset = 1; //annoying buzz
                 }
 
-                // Once copter is below 170cm then go into stage 4
+                // Once copter is below 150cm then go into stage 4
                 if (alt_above_ground < STAGE_3_MIN_ALT) {
                     land_stage = STAGE_4;
                 }
+
+                // Update altitude target (no feed forward)
+                pos_control->set_alt_target_from_climb_rate(cmb_rate, G_Dt, false);
                 
 	    		break;
 
             case STAGE_4:
+                // POINT OF NO RETURN,Descend without pause
+                cmb_rate = -abs(g.land_speed);
 
-                // Descend without pause, point of no return
+                if (alt_above_ground < 30) {
+                    land_stage = STAGE_5;
+                }
+
+                // Update altitude target (no feed forward)
+                pos_control->set_alt_target_from_climb_rate(cmb_rate, G_Dt, true);
+
+                // 
+
+                break;
+
+            case STAGE_5:
+                // Height above ground should be under 30cm
+                cmb_rate = -abs(g.land_speed);
+
+                // Disarm motors when height is less than 17cm
+                if (alt_above_ground < 17) {
+                    init_disarm_motors();
+                }
+
+                // Update altitude target (no feed forward)
+                pos_control->set_alt_target_from_climb_rate(cmb_rate, G_Dt, true);
 
                 break;
 
@@ -286,21 +327,32 @@ void Copter::land_run_vertical_control(bool pause_descent)
                 AP_Notify::events.land_stage_reset = 1;
 
             	// Rise back to 170cm, but we can expect some overshoot
-            	if (alt_above_ground > STAGE_2_MIN_ALT){
+            	if (alt_above_ground > STAGE_1_MIN_ALT){
             		land_stage = STAGE_1;
                     cmb_rate = 0;	
             	}
 
+                // Update altitude target (no feed forward)
+                pos_control->set_alt_target_from_climb_rate(cmb_rate, G_Dt, false);
+
             	break;
 	    }
-    } else {
-        // Emergency landing without beacon
-        cmb_rate = -abs(g.land_speed);
+    } else{
+        // Landing without beacon
+        if (land_pause) {
+            cmb_rate = 0;
+        } else {
+            cmb_rate = -abs(g.land_speed);
+        }
+
         AP_Notify::events.land_stage_one = 1;
+
+        // Update altitude target
+        pos_control->set_alt_target_from_climb_rate(cmb_rate, G_Dt, true);
     }
 
-    // update altitude target and call position controller
-    pos_control->set_alt_target_from_climb_rate_ff(cmb_rate, G_Dt, true);
+    // Call position controller
+    //pos_control->set_alt_target_from_climb_rate_ff(cmb_rate, G_Dt, true);
     pos_control->update_z_controller();
 }
 

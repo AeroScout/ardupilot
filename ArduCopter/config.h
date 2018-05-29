@@ -352,7 +352,7 @@
  #define STAGE_2_MAX_H_ERROR 15				// maximum horizontal error allowed in stage 2
 #endif 
 #ifndef DRIFT_STAGE_2_TARGET_CM
- #define DRIFT_STAGE_2_TARGET_CM 10
+ #define DRIFT_STAGE_2_TARGET_CM 6
 #endif
 #ifndef DRIFT_TOLERANCE_CM
  #define DRIFT_TOLERANCE_CM 4
@@ -361,7 +361,7 @@
  #define STAGE_3_MAX_H_ERROR 20				// maximum horizontal error allowed in stage 3
 #endif 
 #ifndef STAGE_3_MIN_ALT
- #define STAGE_3_MIN_ALT 170					// minimum altitude in cm that is allowed in stage two
+ #define STAGE_3_MIN_ALT 150					// minimum altitude in cm that is allowed in stage two
 #endif
 #ifndef STAGE_4_MAX_H_ERROR
  #define STAGE_4_MAX_H_ERROR 5				// maximum horizontal error allowed in stage 3
