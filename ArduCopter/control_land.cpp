@@ -265,7 +265,7 @@ void Copter::land_run_vertical_control(bool pause_descent)
                 else {
                     // Height checker, but if the copter is descending through stage 2 quickly and meets error requirements this will not be triggered
                     // The height will only be corrected if the variance or the error is huge when in stage 2
-                    if (alt_above_ground > 230) {
+                    if (alt_above_ground > 220) {
                         land_stage = STAGE_1;
                     } else if (alt_above_ground < 150) {
                         land_stage = STAGE_RESET;
@@ -317,8 +317,8 @@ void Copter::land_run_vertical_control(bool pause_descent)
                 // Height above ground should be under 30cm
                 cmb_rate = -abs(g.land_speed);
 
-                // Disarm motors when height is less than 17cm
-                if (alt_above_ground < 17) {
+                // Disarm motors when height is less than 20cm
+                if (alt_above_ground < 20) {
                     init_disarm_motors();
                 }
 
@@ -329,10 +329,10 @@ void Copter::land_run_vertical_control(bool pause_descent)
 
             case STAGE_RESET:
             	cmb_rate = RISE_SPEED;
-                AP_Notify::events.land_stage_reset = 1;
+                
 
             	// Rise back to 170cm, but we can expect some overshoot
-            	if (alt_above_ground > STAGE_1_MIN_ALT){
+            	if (alt_above_ground > 180){
             		land_stage = STAGE_1;
                     cmb_rate = 0;	
             	}
