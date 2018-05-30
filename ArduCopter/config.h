@@ -343,7 +343,7 @@
  #define STAGE_INIT_MIN_ALT 400				// minimum altitude in cm that is allowed in stage init
 #endif
 #ifndef STAGE_1_MIN_ALT
- #define STAGE_1_MIN_ALT 200				// minimum altitude in cm that is allowed in stage one
+ #define STAGE_1_MIN_ALT 190				// minimum altitude in cm that is allowed in stage one
 #endif
 #ifndef STAGE_2_MIN_ALT
  #define STAGE_2_MIN_ALT 170					// minimum altitude in cm that is allowed in stage two

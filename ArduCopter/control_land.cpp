@@ -6,7 +6,7 @@ uint32_t land_start_time;
 bool land_pause;
 PrecLandStage land_stage;
 
-const int int_arraySize = 15;
+const int int_arraySize = 20;
 float array_latestHorizontalError[int_arraySize];
 int int_attemptLandingCount = 0;  // How many times in a row have we been doing this
 int int_landMinAttemptThreshold = 50;  // How many within tollerance we need of the last "int_arraySize"
@@ -215,7 +215,7 @@ void Copter::land_run_vertical_control(bool pause_descent)
 	    		// slow down descent speed in stage 1 (20cm/s)
 	    		cmb_rate = -PLAND_SPEED; 
 
-	    		// Descend until 200cm
+	    		// Descend until 190cm
                 if(alt_above_ground < STAGE_1_MIN_ALT) {
                     cmb_rate = 0;
                     land_stage = STAGE_2;
@@ -265,7 +265,7 @@ void Copter::land_run_vertical_control(bool pause_descent)
                 else {
                     // Height checker, but if the copter is descending through stage 2 quickly and meets error requirements this will not be triggered
                     // The height will only be corrected if the variance or the error is huge when in stage 2
-                    if (alt_above_ground > 220) {
+                    if (alt_above_ground > 210) {
                         land_stage = STAGE_1;
                     } else if (alt_above_ground < 150) {
                         land_stage = STAGE_RESET;
@@ -332,7 +332,7 @@ void Copter::land_run_vertical_control(bool pause_descent)
                 
 
             	// Rise back to 170cm, but we can expect some overshoot
-            	if (alt_above_ground > 180){
+            	if (alt_above_ground > 170){
             		land_stage = STAGE_1;
                     cmb_rate = 0;	
             	}
