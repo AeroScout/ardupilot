@@ -6,7 +6,7 @@ uint32_t land_start_time;
 bool land_pause;
 PrecLandStage land_stage;
 
-const int int_arraySize = 20;
+const int int_arraySize = 30;
 float array_latestHorizontalError[int_arraySize];
 int int_attemptLandingCount = 0;  // How many times in a row have we been doing this
 int int_landMinAttemptThreshold = 50;  // How many within tollerance we need of the last "int_arraySize"
